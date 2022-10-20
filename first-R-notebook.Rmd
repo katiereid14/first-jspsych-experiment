@@ -24,16 +24,38 @@ hist(exp1$rt)
 
 # tidyverse verbs
 ```{r}
-condition_data = exp1 %>% select(subject, rt, typeoftrial, trialcondition, correct) %>%
+condition_data = exp1 %>%
+  select(subject, rt, typeoftrial, trialcondition, correct) %>%
   filter(typeoftrial == "picture" &
            trialcondition %in%
            c("Heavy_Normal", "Light_Smashed", "Heavy_Smashed", "Light_Normal"))
 
+condition_data = condition_data %>%
+  separate(trialcondition, into = c("weight", "shape"), sep = "_")
+
+condition_data %>% 
+  count()
+condition_data %>%
+  group_by(subject)%>%
+  count()
+condition_data %>%
+  group_by(subject, trialcondition)%>%
+  count()
+
 means = condition_data %>%
-  group_by(trialcondition) %>%
+  group_by(weight, shape) %>%
   summarise(mean_rt = mean(rt),
     sd_rt = sd(rt),
     mean_acc = mean(correct))
+
+means %>%
+```
+
+
+```{r}
+ggplot(aes(x = shape, y= mean_rt, fill = weight)) +
+  geom_col(position = "dodge") +
+  labs(x = "shape", y = "mean RT", title = "Plot of Means")
 ```
 # exercise
 ```{r}
@@ -58,7 +80,7 @@ ggtitle("Histogram of RT")
 ```{r}
 means %>% 
   ggplot(aes(x = trialcondition, y = mean_rt)) +
-  geom_bar(stat = "identity", fill = "pink", color = "navy")+
+  geom_col(fill = "pink", color = "navy")+
   theme_fivethirtyeight()+
   xlab("RT (in milliseconds)") + 
   ylab ("Count")+
@@ -71,6 +93,10 @@ df = read_csv("relatedness_exp.csv")
 part_df = df %>% select(ID, Type, pathlength, RT) %>%
   filter(Type == "Related" & pathlength %in% c(1,2))
 
+df %>% 
+  group_by(ID)%>%
+  count()
+
 mean_all = df %>%
   summarise(mean = mean(RT))
 mean_part = part_df %>%
@@ -78,4 +104,86 @@ mean_part = part_df %>%
 mean_ID = df %>%
   group_by(ID) %>%
   summarise(mean = mean(RT))
+
+df %>%
+  group_by(ID, pathlength)%>%
+  count()
+
+mean_condition = df %>%
+  group_by(Type, pathlength)%>%
+  summarise(meanRT = mean(RT))
+
+mean_condition %>%
+  ggplot(aes(x = pathlength, y = meanRT, fill = Type)) +
+  geom_col(position = "dodge")+
+  labs(x = "pathlength", y = "meanRT", title = "Barplot of RT")
 ```
+
+# New Chunk, Mutate (Factors, Levels, Unique)
+```{r}
+df = df %>% 
+  mutate(RT_seconds = RT/1000, accuracy = ifelse(pathlength == 1 & Type == "Related", 1, 0))
+
+df = df %>%
+  mutate(pathlength = as.factor(pathlength), Type = as.factor(Type))
+
+df %>% pull(Type)
+levels(df%>%pull(pathlength))
+
+df %>% pull (ID) %>% unique()
+df %>% pull (response) %>% unique()
+unique(c(1,3,3,4,5,5,1,2))
+```
+
+# Wide Data Conversion
+```{r}
+df_wide1 = mean_condition %>%
+  pivot_wider(names_from = pathlength, values_from = meanRT)
+
+df_wide_2 = mean_condition %>%
+  pivot_wider(names_from = Type, values_from = meanRT)
+
+exp1_wide = means %>%
+  select(weight, shape, mean_rt)%>%
+  pivot_wider(names_from = weight, values_from = mean_rt)
+
+# number of trials done by each subject in each condition (weight / shape)
+condition_data %>%
+  group_by(subject, weight, shape)%>%
+  count()
+
+mean_subject = condition_data %>%
+  group_by(subject, weight, shape)%>%
+  summarise(mean_rt = mean(rt))
+
+subject_wide = mean_subject %>%
+  pivot_wider(names_from = c(weight, shape), values_from = mean_rt)
+```
+
+# t test
+```{r}
+t.test(subject_wide$Heavy_Normal, subject_wide$Heavy_Smashed)
+
+mean_subject %>%
+  filter(weight == "Heavy") %>%
+  t.test(mean_rt ~ shape, data =.)
+```
+
+# Verifying R output
+```{r}
+x1_bar = mean(subject_wide$Heavy_Normal)
+x2_bar = subject_wide %>% pull(Heavy_Smashed) %>% mean()
+
+s1 = sd(subject_wide$Heavy_Normal)
+s2 = sd(subject_wide$Heavy_Smashed)
+
+n1 = nrow(subject_wide)
+n2 = nrow(subject_wide)
+
+t_numerator = x1_bar - x2_bar
+inside_root1 = s1*s1/n1
+inside_root2 = s2*s2/n2
+t_denominator = sqrt(inside_root1 + inside_root2)
+t = t_numerator/t_denominator
+```
+
