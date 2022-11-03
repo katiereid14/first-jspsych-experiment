@@ -6,12 +6,16 @@ output: html_notebook
 ```{r}
 #install.packages("tidyverse", dependencies = TRUE)
 #install.packages("ggthemes", dependencies = TRUE)
+#install.packages("datarium")
 ```
 # load packages
 ```{r}
 library(tidyverse)
 library(ggplot2)
 library(ggthemes)
+library(rstatix)
+library(ggpubr)
+library(datarium)
 ```
 # import data
 ```{r}
@@ -203,9 +207,6 @@ p_value = 2*(1-pt(t, deg))
 
 # Assumptions
 ```{r}
-library(rstatix)
-library(ggpubr)
-
 subject_wide = subject_wide %>%
   mutate(diff = Heavy_Normal - Heavy_Smashed)
 
@@ -266,5 +267,69 @@ new_means_long = new_means_long %>%
   separate(condition, into = c("weight", "shape"), sep = "_") %>%
   rename(mean_rt = value)
   
+```
+
+# One-Way ANOVA
+```{r}
+data("iris")
+View(iris)
+
+levels(iris %>% pull(Species))
+
+iris %>% 
+  ggplot(aes(x=Species, y=Petal.Length)) +
+  geom_boxplot()
+
+iris %>%
+  group_by(Species) %>%
+  identify_outliers(Petal.Length)
+
+iris %>%
+  group_by(Species) %>%
+  shapiro_test(Petal.Length)
+
+ggqqplot(iris, "Petal.Length", facet.by = "Species")
+
+iris %>%
+  group_by(Species) %>%
+  summarise(sd = sd(Petal.Length), var = var(Petal.Length))
+
+iris %>% levene_test(Petal.Length ~ Species)
+
+iris %>% anova_test(Petal.Length ~ Species)
+
+iris %>% welch_anova_test(Petal.Length ~ Species)
+
+pwc = iris %>% tukey_hsd(Petal.Length ~ Species)
+
+pwc2 <- iris %>% games_howell_test(Petal.Length ~ Species)
+```
+
+# two-way ANOVA
+```{r}
+data("jobsatisfaction", package = "datarium")
+View(jobsatisfaction)
+
+jobsatisfaction %>%
+  group_by(gender, education_level) %>%
+  summarise(mean = mean(score), sd = sd(score))
+
+jobsatisfaction %>%
+  ggplot(aes(x = gender, y = score, color = education_level)) +
+  geom_boxplot()
+
+jobsatisfaction %>%
+  group_by(gender, education_level) %>%
+  identify_outliers(score)
+
+jobsatisfaction %>%
+  group_by(gender, education_level) %>%
+  shapiro_test(score)
+
+jobsatisfaction %>%
+  levene_test(score ~ gender*education_level)
+
+jobsatisfaction %>%
+  anova_test(score ~ gender * education_level)
 ```
 
