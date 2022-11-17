@@ -7,6 +7,7 @@ output: html_notebook
 #install.packages("tidyverse", dependencies = TRUE)
 #install.packages("ggthemes", dependencies = TRUE)
 #install.packages("datarium")
+#install.packages("emmeans")
 ```
 # load packages
 ```{r}
@@ -16,6 +17,7 @@ library(ggthemes)
 library(rstatix)
 library(ggpubr)
 library(datarium)
+library(emmeans)
 ```
 # import data
 ```{r}
@@ -331,5 +333,96 @@ jobsatisfaction %>%
 
 jobsatisfaction %>%
   anova_test(score ~ gender * education_level)
+
+model <- lm(score ~ gender * education_level, data = jobsatisfaction)
+
+jobsatisfaction %>%
+  group_by(gender)%>%
+  anova_test(score ~ education_level, error = model)
+
+jobsatisfaction %>%
+  group_by(gender) %>%
+  emmeans_test(score ~ education_level, p.adjust.method = "bonferroni")
+
+jobsatisfaction %>%
+  pairwise_t_test(
+    score ~ education_level,
+    p.adjust.method = "bonferroni")
+```
+
+# Repeated Measures ANOVA
+```{r}
+relatedness = read_csv("relatedness_exp.csv")
+
+relatedness = relatedness %>%
+  mutate(pathlength = as.factor(pathlength))
+
+levels(relatedness$pathlength)
+
+relatedness %>%
+  group_by(ID) %>%
+  count()
+
+relatedness %>%
+  group_by(ID, pathlength) %>%
+  count()
+
+mean_rt = relatedness %>%
+  group_by(Type, pathlength) %>%
+  summarise(rt = mean(RT))
+
+mean_rt %>%
+  ggplot(aes(x = pathlength, y = rt, group = Type, fill = Type)) +
+  geom_col(position = "dodge") +
+  theme_clean()+
+  scale_fill_wsj()
+
+subject_rt = relatedness %>%
+  group_by(ID, pathlength, Type) %>%
+  summarise(rt = mean(RT)) %>%
+  mutate(logRT = log(rt))
+
+hist(subject_rt$rt)
+hist(subject_rt$logRT)
+
+outliers = subject_rt %>%
+  group_by(pathlength, Type) %>%
+  identify_outliers(logRT)
+
+sids = outliers %>% filter(is.extreme == TRUE) %>% pull(ID)
+subject_rt = subject_rt %>% filter(!ID %in% sids)
+
+subject_rt = subject_rt %>% ungroup()
+
+subject_rt %>%
+  group_by(pathlength, Type) %>%
+  shapiro_test(logRT)
+
+ggqqplot(subject_rt, "logRT", ggtheme = theme_bw()) + facet_grid(pathlength ~ Type, labeller = "label_both")
+
+anova_test(
+  data = subject_rt, dv = logRT, wid = ID,
+  within = c(pathlength, Type)
+)
+
+rm.aov = anova_test(
+  data = subject_rt, dv = logRT, wid = ID,
+  within = c(pathlength, Type)
+)
+
+get_anova_table(rm.aov)
+
+subject_rt %>%
+  group_by(Type)%>%
+  anova_test(dv = logRT, wid = ID, within = pathlength) %>%
+  get_anova_table() %>%
+  adjust_pvalue(method = "bonferroni")
+
+pwt = subject_rt %>%
+  group_by(Type) %>%
+  pairwise_t_test(
+    logRT ~ pathlength, paired = TRUE,
+    p.adjust.method = "bonferroni"
+  )
 ```
 

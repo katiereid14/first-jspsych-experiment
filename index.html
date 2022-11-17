@@ -34,8 +34,9 @@ var instruct1 = {
     trial_duration: 5000,
     data: {
     typeoftrial: 'instruct',
-    list_number: jsPsych.timelineVariable('List'),
-    trialcondition: jsPsych.timelineVariable('condition'),
+    list_number: jsPsych.timelineVariable('list'),
+    trial_language: jsPsych.timelineVariable('language'),
+    trial_condition: jsPsych.timelineVariable('condition'),
     subject: subject_id
     }
 }
@@ -56,8 +57,9 @@ var fixation1 = {
     trial_duration: 1000,
     data: {
     typeoftrial: 'fixation',
-    list_number: jsPsych.timelineVariable('List'),
-    trialcondition: jsPsych.timelineVariable('condition'),
+    list_number: jsPsych.timelineVariable('list'),
+    trial_language: jsPsych.timelineVariable('language'),
+    trial_condition: jsPsych.timelineVariable('condition'),
     subject: subject_id
     }
 }
@@ -68,8 +70,9 @@ var sentence = {
     choices: " ",
     data: {
     typeoftrial: 'sentence',
-    list_number: jsPsych.timelineVariable('List'),
-    trialcondition: jsPsych.timelineVariable('condition'),
+    list_number: jsPsych.timelineVariable('list'),
+    trial_language: jsPsych.timelineVariable('language'),
+    trial_condition: jsPsych.timelineVariable('condition'),
     subject: subject_id
      }
 }
@@ -81,8 +84,9 @@ var fixation2 = {
     trial_duration: '500',
     data: {
     typeoftrial: 'fixation',
-    list_number: jsPsych.timelineVariable('List'),
-    trialcondition: jsPsych.timelineVariable('condition'),
+    list_number: jsPsych.timelineVariable('list'),
+    trial_language: jsPsych.timelineVariable('language'),
+    trial_condition: jsPsych.timelineVariable('condition'),
     subject: subject_id
     }
 }
@@ -93,8 +97,9 @@ var picture = {
     choices: ['S', 'N', 's', 'n'],
     data: {
     typeoftrial: 'picture',
-    list_number: jsPsych.timelineVariable('List'),
-    trialcondition: jsPsych.timelineVariable('condition'),
+    list_number: jsPsych.timelineVariable('list'),
+    trial_language: jsPsych.timelineVariable('language'),
+    trial_condition: jsPsych.timelineVariable('condition'),
     subject: subject_id
     },
     on_finish: function(data){
